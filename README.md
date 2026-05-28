@@ -148,7 +148,7 @@ mvnw verify          # genera el reporte de cobertura JaCoCo
 ```
 
 Incluye:
-- Unitarias del dominio y casos de uso (objetivo ≥ 80%).
+- Unitarias del dominio y casos de uso. Cobertura total ~74% (JaCoCo), con foco en el dominio (≈84%) y la lógica crítica.
 - Prueba de **idempotencia** (misma clave dos veces → una sola transacción).
 - Prueba de **concurrencia** (dos débitos en paralelo → el saldo nunca queda negativo).
 - Pruebas de API con MockMvc.
