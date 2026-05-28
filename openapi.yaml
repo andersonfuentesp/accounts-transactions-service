@@ -1,0 +1,318 @@
+openapi: 3.0.1
+info:
+  title: Accounts & Transactions API
+  description: Servicio de cuentas y transacciones - arquitectura hexagonal
+  version: 1.0.0
+servers:
+- url: http://localhost:8080
+  description: Generated server url
+security:
+- bearerAuth: []
+paths:
+  /transactions:
+    post:
+      tags:
+      - Transacciones
+      summary: Crea una transacción (idempotente)
+      operationId: create
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTransactionRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TransactionResponse"
+  /auth/login:
+    post:
+      tags:
+      - Autenticación
+      summary: Autentica al usuario y devuelve un JWT
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+  /accounts:
+    get:
+      tags:
+      - Cuentas
+      summary: Lista cuentas paginadas
+      operationId: list
+      parameters:
+      - name: offset
+        in: query
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+          format: int32
+          default: 0
+      - name: limit
+        in: query
+        required: false
+        schema:
+          maximum: 100
+          minimum: 1
+          type: integer
+          format: int32
+          default: 20
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageResponseAccountResponse"
+    post:
+      tags:
+      - Cuentas
+      summary: Crea una cuenta
+      operationId: create_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAccountRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AccountResponse"
+  /accounts/{id}:
+    get:
+      tags:
+      - Cuentas
+      summary: Obtiene una cuenta por id
+      operationId: getById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AccountResponse"
+  /accounts/{accountId}/transactions:
+    get:
+      tags:
+      - Transacciones
+      summary: Lista movimientos de una cuenta con filtros
+      operationId: list_1
+      parameters:
+      - name: accountId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: from
+        in: query
+        description: "Desde (ISO-8601, ej. 2026-01-01T00:00:00Z)"
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        description: Hasta (ISO-8601)
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: type
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - DEBIT
+          - CREDIT
+      - name: offset
+        in: query
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+          format: int32
+          default: 0
+      - name: limit
+        in: query
+        required: false
+        schema:
+          maximum: 100
+          minimum: 1
+          type: integer
+          format: int32
+          default: 20
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageResponseTransactionResponse"
+components:
+  schemas:
+    CreateTransactionRequest:
+      required:
+      - accountId
+      - amount
+      - currency
+      - type
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+          - DEBIT
+          - CREDIT
+        amount:
+          minimum: 0.01
+          exclusiveMinimum: false
+          type: number
+        currency:
+          type: string
+    TransactionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        accountId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+          - DEBIT
+          - CREDIT
+        amount:
+          type: number
+        currency:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    LoginRequest:
+      required:
+      - password
+      - username
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    TokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+        expiresInSeconds:
+          type: integer
+          format: int64
+    CreateAccountRequest:
+      required:
+      - currency
+      - initialBalance
+      - owner
+      type: object
+      properties:
+        owner:
+          type: string
+        currency:
+          type: string
+        initialBalance:
+          minimum: 0.0
+          exclusiveMinimum: false
+          type: number
+    AccountResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        owner:
+          type: string
+        currency:
+          type: string
+        balance:
+          type: number
+        version:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+    PageResponseAccountResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountResponse"
+        offset:
+          type: integer
+          format: int32
+        limit:
+          type: integer
+          format: int32
+        total:
+          type: integer
+          format: int64
+    PageResponseTransactionResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransactionResponse"
+        offset:
+          type: integer
+          format: int32
+        limit:
+          type: integer
+          format: int32
+        total:
+          type: integer
+          format: int64
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
