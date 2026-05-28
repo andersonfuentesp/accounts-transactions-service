@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: accounts-transactions-service
+
+  datasource:
+    url: jdbc:h2:mem:accountsdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  jwt:
+    issuer: accounts-transactions-service
+    audience: accounts-clients
+    expiration-minutes: 60
+  auth:
+    username: admin
+    password: admin123
+
+logging:
+  level:
+    com.santander.accounts: INFO
